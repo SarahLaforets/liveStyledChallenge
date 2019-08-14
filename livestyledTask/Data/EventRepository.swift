@@ -9,51 +9,85 @@
 import Foundation
 
 protocol EventFetching {
-    func fetchEvents(completion: @escaping ([Event]) -> Void)
+    func fetchEvents(completion: @escaping ([Event]?, RemoteError?) -> Void)
 }
 
 class EventRepository: EventFetching {
     
     private let remoteUseCase: RemoteEventUseCase
-    private let userDefaults: FavouriteDataSource
+    private let favouriteUserDefaults: FavouriteDataSource
+    private let cacheUserDefaults: EventsDataSource
     
-    init(remoteUseCase: RemoteEventUseCase, userDefaults: FavouriteDataSource) {
+    init(remoteUseCase: RemoteEventUseCase, userDefaults: FavouriteDataSource, cacheUserDefaults: EventsDataSource) {
         self.remoteUseCase = remoteUseCase
-        self.userDefaults = userDefaults
+        self.favouriteUserDefaults = userDefaults
+        self.cacheUserDefaults = cacheUserDefaults
     }
     
-    func fetchEvents(completion: @escaping ([Event]) -> Void) {
-        remoteUseCase.fetchRemoteEvents { (response) in
-            guard let jsonArray = response as? [[String: Any]] else {
-                return
-            }
-            
-            let events: [Event] = jsonArray.map { jsonEvent in
-                
-                guard let title = jsonEvent["title"] as? String,
-                    let imageStringURL = jsonEvent["image"] as? String,
-                    let timestamp = jsonEvent["startDate"] as? Int,
-                    let id = jsonEvent["id"] as? String,
-                    let timeInterval = TimeInterval(exactly: timestamp),
-                    let imageURL = URL(string: imageStringURL) else {
-                    fatalError("Can't parse json properly")
+    func fetchEvents(completion: @escaping ([Event]?, RemoteError?) -> Void) {
+        remoteUseCase.fetchRemoteEvents { (response, error) in
+            if error != nil {
+                switch error! {
+                case .parsingIssue(let error):
+                    assertionFailure(error.localizedDescription)
+                    print(error.localizedDescription)
+                case .connectionIssue(let error):
+                    assertionFailure(error.localizedDescription) // Comment this line to use the app without network
+                    print(error.localizedDescription)
                 }
-                
-                let startDate = Date(timeIntervalSince1970: timeInterval)
-                
-                return Event(id: id,
-                                  imageURL: imageURL,
-                                  title: title,
-                                  date: startDate,
-                                  isFavourite: self.isFavourite(id: id))
+
+                completion(self.parseEvents(with: self.cachedEvents()), error)
             }
             
-            completion(events)
+            let events = self.parseEvents(with: response)
+
+            completion(events, nil)
         }
     }
     
+    private func parseEvents(with response: Any?) -> [Event]? {
+        guard let jsonArray = response as? [[String: Any]] else {
+            return nil
+        }
+        
+        cacheResponse(with: jsonArray)
+        
+        let events: [Event] = jsonArray.map { jsonEvent in
+            guard let title = jsonEvent["title"] as? String,
+                let imageStringURL = jsonEvent["image"] as? String,
+                let timestamp = jsonEvent["startDate"] as? Int,
+                let id = jsonEvent["id"] as? String,
+                let timeInterval = TimeInterval(exactly: timestamp),
+                let imageURL = URL(string: imageStringURL) else {
+                    fatalError("Can't parse event")
+            }
+            
+            let startDate = Date(timeIntervalSince1970: timeInterval)
+            
+            return Event(id: id,
+                         imageURL: imageURL,
+                         title: title,
+                         date: startDate,
+                         isFavourite: self.isFavourite(id: id))
+        }
+        
+        return events
+    }
+    
+    func cacheResponse(with jsonArray: [[String: Any]]) {
+        cacheUserDefaults.cacheEvents(with: jsonArray)
+    }
+    
+    private func cachedEvents() -> [[String: Any]] {
+        guard let events = self.cacheUserDefaults.getEvents() else {
+            fatalError("No event were cached")
+        }
+        
+        return events
+    }
+    
     private func isFavourite(id: String) -> Bool {
-        guard let favourites = userDefaults.getFavourites(), !favourites.isEmpty else {
+        guard let favourites = favouriteUserDefaults.getFavourites(), !favourites.isEmpty else {
             return false
         }
         

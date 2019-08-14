@@ -11,9 +11,9 @@ import UIKit
 class ViewController: UITableViewController {
     
     var presenter: EventPresenting?
-    var indicator = UIActivityIndicatorView()
     
-    var events = [Event]()
+    private var indicator = UIActivityIndicatorView()
+    private var events = [Event]()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -54,7 +54,7 @@ class ViewController: UITableViewController {
         return isFavourite ? "UnFollow" : "Follow"
     }
 
-    func activityIndicator() {
+    private func activityIndicator() {
         indicator = UIActivityIndicatorView(frame: CGRect(x: 0, y: 0, width: 40, height: 40))
         indicator.style = UIActivityIndicatorView.Style.gray
         indicator.center = self.view.center
@@ -77,6 +77,12 @@ extension ViewController: FavouriteStateChanging {
 }
 
 extension ViewController: EventDisplayable {
+    func presentAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: UIAlertController.Style.alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(alert, animated: true, completion: nil)
+    }
+    
     func show(events: [Event]) {
         self.events = events
         indicator.stopAnimating()

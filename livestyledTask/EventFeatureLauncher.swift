@@ -17,9 +17,10 @@ class EventFeatureLauncher {
         }
         
         let useCase = RemoteEventUseCase()
-        let userDefault = FavouriteUserDefauls()
-        let fetcher = EventRepository(remoteUseCase: useCase, userDefaults: userDefault)
-        let presenter = EventPresenter(fetcher: fetcher, userDefault: userDefault)
+        let favouriteUserDefault = FavouriteUserDefauls()
+        let cacheUserDefault = EventsUserDefauls()
+        let fetcher = EventRepository(remoteUseCase: useCase, userDefaults: favouriteUserDefault, cacheUserDefaults: cacheUserDefault)
+        let presenter = EventPresenter(fetcher: fetcher, userDefault: favouriteUserDefault, eventCachesDefault: cacheUserDefault)
         
         presenter.view = viewController
         viewController.presenter = presenter

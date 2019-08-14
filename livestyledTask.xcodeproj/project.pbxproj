@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		8C241869230448EE005BFED7 /* FavouriteUserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C241868230448EE005BFED7 /* FavouriteUserDefaults.swift */; };
+		8C24186B2304518C005BFED7 /* CacheEventUserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C24186A2304518C005BFED7 /* CacheEventUserDefaults.swift */; };
 		8C6DDF802300700D0046AB42 /* EventPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6DDF7F2300700D0046AB42 /* EventPresenter.swift */; };
 		8C6DDF822300AB7A0046AB42 /* EventTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6DDF812300AB7A0046AB42 /* EventTableViewCell.swift */; };
 		8C6DDF862300B1C80046AB42 /* EventFeatureLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6DDF852300B1C80046AB42 /* EventFeatureLauncher.swift */; };
@@ -34,6 +35,7 @@
 
 /* Begin PBXFileReference section */
 		8C241868230448EE005BFED7 /* FavouriteUserDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavouriteUserDefaults.swift; sourceTree = "<group>"; };
+		8C24186A2304518C005BFED7 /* CacheEventUserDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheEventUserDefaults.swift; sourceTree = "<group>"; };
 		8C6DDF7F2300700D0046AB42 /* EventPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventPresenter.swift; sourceTree = "<group>"; };
 		8C6DDF812300AB7A0046AB42 /* EventTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventTableViewCell.swift; sourceTree = "<group>"; };
 		8C6DDF852300B1C80046AB42 /* EventFeatureLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventFeatureLauncher.swift; sourceTree = "<group>"; };
@@ -121,6 +123,7 @@
 				8C94BB1223004E6A00A2DBB8 /* EventRepository.swift */,
 				8C94BB0E2300478800A2DBB8 /* EventViewModel.swift */,
 				8C241868230448EE005BFED7 /* FavouriteUserDefaults.swift */,
+				8C24186A2304518C005BFED7 /* CacheEventUserDefaults.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -228,6 +231,7 @@
 			files = (
 				8C94BB112300487200A2DBB8 /* RemoteEventUseCase.swift in Sources */,
 				8C94BAF02300471600A2DBB8 /* ViewController.swift in Sources */,
+				8C24186B2304518C005BFED7 /* CacheEventUserDefaults.swift in Sources */,
 				8C94BB0F2300478800A2DBB8 /* EventViewModel.swift in Sources */,
 				8C94BAEE2300471600A2DBB8 /* AppDelegate.swift in Sources */,
 				8C6DDF822300AB7A0046AB42 /* EventTableViewCell.swift in Sources */,
