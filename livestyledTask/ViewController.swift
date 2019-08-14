@@ -8,13 +8,68 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController: UITableViewController {
+    
+    var presenter: EventPresenting?
+    var indicator = UIActivityIndicatorView()
+    
+    var events = [Event]()
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
+        EventFeatureLauncher().createDependencies(view: self)
+        activityIndicator()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        indicator.startAnimating()
+        presenter?.startPresenting()
+    }
+    
+    override func numberOfSections(in tableView: UITableView) -> Int {
+        return 1
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return events.count
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "eventCell", for: indexPath) as! EventTableViewCell
+        
+        let event = events[indexPath.row]
+        cell.titleLabel.text = event.title
+        cell.startDateLabel.text = presenter?.formatDate(with: event.date)
+        cell.activityIndicator.startAnimating()
+        
+        presenter?.downloadImage(imageURL: event.imageURL, cell: cell)
+        
+        return cell
     }
 
+    func activityIndicator() {
+        indicator = UIActivityIndicatorView(frame: CGRect(x: 0, y: 0, width: 40, height: 40))
+        indicator.style = UIActivityIndicatorView.Style.gray
+        indicator.center = self.view.center
+        indicator.hidesWhenStopped = true
+        view.addSubview(indicator)
+    }
+}
 
+extension ViewController: EventDisplayable {
+    func show(events: [Event]) {
+        self.events = events
+        indicator.stopAnimating()
+        tableView.separatorStyle = .singleLine
+        tableView.reloadData()
+    }
+    
+    func loadImage(with image: UIImage, cell: EventTableViewCell) {
+        cell.activityIndicator.stopAnimating()
+        cell.eventImageView.layer.cornerRadius = cell.eventImageView.frame.size.height/2
+        cell.eventImageView.layer.masksToBounds = true
+        cell.eventImageView.layer.borderWidth = 0
+        cell.eventImageView.image = image
+    }
 }
 
