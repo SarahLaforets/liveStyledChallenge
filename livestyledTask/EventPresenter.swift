@@ -23,10 +23,12 @@ protocol EventPresenting: class {
 
 class EventPresenter: EventPresenting {
     
-    let fetcher: EventFetching
-    weak var view: EventDisplayable?
-    var events: [Event] = [Event]()
+    private let fetcher: EventFetching
+    private let userDefault: FavouriteDataSource
     
+    weak var view: EventDisplayable?
+    private var events: [Event] = [Event]()
+
     lazy var dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_UK")
@@ -34,8 +36,9 @@ class EventPresenter: EventPresenting {
         return formatter
     }()
     
-    init(fetcher: EventFetching) {
+    init(fetcher: EventFetching, userDefault: FavouriteDataSource) {
         self.fetcher = fetcher
+        self.userDefault = userDefault
     }
     
     func startPresenting() {
@@ -52,10 +55,7 @@ class EventPresenter: EventPresenting {
     }
     
     func buttonPressed(id: String) {
-//        guard var event = events?.first(where: {$0.id == id}) else {
-//            fatalError("Cannot recorer event")
-//        }
-//        event.isFavourite = !event.isFavourite
+        userDefault.statusChange(for: id)
     }
     
     func downloadImage(imageURL: URL, cell: EventTableViewCell) {

@@ -8,12 +8,19 @@
 
 import UIKit
 
+protocol FavouriteStateChanging: class {
+    func didPressButton(with cell: EventTableViewCell)
+}
+
 class EventTableViewCell: UITableViewCell {
 
     @IBOutlet var eventImageView: UIImageView!
     @IBOutlet var titleLabel: UILabel!
     @IBOutlet var startDateLabel: UILabel!
     @IBOutlet var activityIndicator: UIActivityIndicatorView!
+    @IBOutlet var favouriteButton: UIButton!
+    
+    weak var cellDelegate: FavouriteStateChanging?
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -25,5 +32,9 @@ class EventTableViewCell: UITableViewCell {
 
         // Configure the view for the selected state
     }
-
+    
+    @IBAction func didPressFavouriteButton(_ sender: Any) {
+        cellDelegate?.didPressButton(with: self)
+    }
+    
 }

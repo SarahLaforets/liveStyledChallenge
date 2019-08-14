@@ -15,9 +15,11 @@ protocol EventFetching {
 class EventRepository: EventFetching {
     
     private let remoteUseCase: RemoteEventUseCase
+    private let userDefaults: FavouriteDataSource
     
-    init(remoteUseCase: RemoteEventUseCase) {
+    init(remoteUseCase: RemoteEventUseCase, userDefaults: FavouriteDataSource) {
         self.remoteUseCase = remoteUseCase
+        self.userDefaults = userDefaults
     }
     
     func fetchEvents(completion: @escaping ([Event]) -> Void) {
@@ -43,10 +45,18 @@ class EventRepository: EventFetching {
                                   imageURL: imageURL,
                                   title: title,
                                   date: startDate,
-                                  isFavourite: false)
+                                  isFavourite: self.isFavourite(id: id))
             }
             
             completion(events)
         }
+    }
+    
+    private func isFavourite(id: String) -> Bool {
+        guard let favourites = userDefaults.getFavourites(), !favourites.isEmpty else {
+            return false
+        }
+        
+        return favourites.contains(id)
     }
 }

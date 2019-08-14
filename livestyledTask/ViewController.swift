@@ -40,11 +40,18 @@ class ViewController: UITableViewController {
         let event = events[indexPath.row]
         cell.titleLabel.text = event.title
         cell.startDateLabel.text = presenter?.formatDate(with: event.date)
-        cell.activityIndicator.startAnimating()
         
+        cell.favouriteButton.setTitle(buttonTitle(isFavourite: event.isFavourite), for: .normal)
+        cell.cellDelegate = self
+        
+        cell.activityIndicator.startAnimating()
         presenter?.downloadImage(imageURL: event.imageURL, cell: cell)
         
         return cell
+    }
+    
+    private func buttonTitle(isFavourite: Bool) -> String {
+        return isFavourite ? "UnFollow" : "Follow"
     }
 
     func activityIndicator() {
@@ -53,6 +60,19 @@ class ViewController: UITableViewController {
         indicator.center = self.view.center
         indicator.hidesWhenStopped = true
         view.addSubview(indicator)
+    }
+}
+
+extension ViewController: FavouriteStateChanging {
+    func didPressButton(with cell: EventTableViewCell) {
+        guard let indexPath = tableView.indexPath(for: cell) else {
+            assertionFailure("IndexPath not found")
+            return
+        }
+        
+        events[indexPath.row].isFavourite = !events[indexPath.row].isFavourite
+        cell.favouriteButton.setTitle(buttonTitle(isFavourite: events[indexPath.row].isFavourite), for: .normal)
+        presenter?.buttonPressed(id: events[indexPath.row].id)
     }
 }
 
