@@ -17,7 +17,12 @@ class ViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        EventFeatureLauncher().createDependencies(view: self)
+        
+        let dependencies = EventFeatureLauncher()
+        presenter = dependencies.createPresenter()
+        
+        presenter?.view = self
+        
         activityIndicator()
     }
     

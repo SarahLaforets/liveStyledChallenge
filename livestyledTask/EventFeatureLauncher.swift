@@ -11,18 +11,14 @@ import UIKit
 
 class EventFeatureLauncher {
     
-    func createDependencies(view: EventDisplayable) {
-        guard let viewController = view as? ViewController else {
-            fatalError()
-        }
-        
-        let useCase = RemoteEventUseCase()
+    func createPresenter() -> EventPresenting {
+        let useCase = RemoteEventService()
         let favouriteUserDefault = FavouriteUserDefauls()
         let cacheUserDefault = EventsUserDefauls()
-        let fetcher = EventRepository(remoteUseCase: useCase, userDefaults: favouriteUserDefault, cacheUserDefaults: cacheUserDefault)
+        let cacheService = CacheService()
+        let fetcher = EventRepository(remoteUseCase: useCase, userDefaults: favouriteUserDefault, cacheUserDefaults: cacheUserDefault, cacheService: cacheService)
         let presenter = EventPresenter(fetcher: fetcher, userDefault: favouriteUserDefault, eventCachesDefault: cacheUserDefault)
         
-        presenter.view = viewController
-        viewController.presenter = presenter
+        return presenter
     }
 }

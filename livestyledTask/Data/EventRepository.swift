@@ -9,69 +9,90 @@
 import Foundation
 
 protocol EventFetching {
-    func fetchEvents(completion: @escaping ([Event]?, RemoteError?) -> Void)
+    func fetchEvents(completion: @escaping (Result<[Event]>) -> Void)
 }
 
 class EventRepository: EventFetching {
     
-    private let remoteUseCase: RemoteEventUseCase
+    private let remoteUseCase: RemoteEventService
     private let favouriteUserDefaults: FavouriteDataSource
     private let cacheUserDefaults: EventsDataSource
+    private let cacheService: CacheFetching
+    private static let cacheFileName = "eventsCache"
     
-    init(remoteUseCase: RemoteEventUseCase, userDefaults: FavouriteDataSource, cacheUserDefaults: EventsDataSource) {
+    init(remoteUseCase: RemoteEventService, userDefaults: FavouriteDataSource, cacheUserDefaults: EventsDataSource, cacheService: CacheFetching) {
         self.remoteUseCase = remoteUseCase
         self.favouriteUserDefaults = userDefaults
         self.cacheUserDefaults = cacheUserDefaults
+        self.cacheService = cacheService
     }
     
-    func fetchEvents(completion: @escaping ([Event]?, RemoteError?) -> Void) {
-        remoteUseCase.fetchRemoteEvents { (response, error) in
-            if error != nil {
-                switch error! {
-                case .parsingIssue(let error):
-                    assertionFailure(error.localizedDescription)
-                    print(error.localizedDescription)
-                case .connectionIssue(let error):
-                    assertionFailure(error.localizedDescription) // Comment this line to use the app without network
-                    print(error.localizedDescription)
+    func fetchEvents(completion: @escaping (Result<[Event]>) -> Void) {
+        remoteUseCase.fetchRemoteEvents { [weak self] (result) in
+            switch result {
+            case .success(let data):
+                self?.cacheService.saveDataToCache(with: data, fileName: EventRepository.cacheFileName)
+                self?.handleData(with: data, completion: completion)
+            case .failure(let errorState):
+                switch errorState {
+                case .network:
+                    self?.cacheService.getCache(from: EventRepository.cacheFileName, completion: { (result) in
+                        switch result {
+                        case .success(let data):
+                            self?.handleData(with: data, completion: completion)
+                        case .failure(let errorState):
+                            completion(.failure(errorState))
+                        }
+                    })
+                default: completion(.failure(errorState))
                 }
-
-                completion(self.parseEvents(with: self.cachedEvents()), error)
             }
-            
-            let events = self.parseEvents(with: response)
-
-            completion(events, nil)
         }
     }
     
-    private func parseEvents(with response: Any?) -> [Event]? {
-        guard let jsonArray = response as? [[String: Any]] else {
-            return nil
+    private func handleData(with data: Data, completion: @escaping ((Result<[Event]>) -> Void)) {
+        let eventsResult = parseJSON(with: data)
+        
+        switch eventsResult {
+        case .success(let events):
+            completion(.success(events))
+        case .failure(let errorState):
+            completion(.failure(errorState))
         }
-        
-        cacheResponse(with: jsonArray)
-        
-        let events: [Event] = jsonArray.map { jsonEvent in
-            guard let title = jsonEvent["title"] as? String,
-                let imageStringURL = jsonEvent["image"] as? String,
-                let timestamp = jsonEvent["startDate"] as? Int,
-                let id = jsonEvent["id"] as? String,
-                let timeInterval = TimeInterval(exactly: timestamp),
-                let imageURL = URL(string: imageStringURL) else {
-                    fatalError("Can't parse event")
+    }
+    
+    private func parseJSON(with data: Data) -> Result<[Event]> {
+        do {
+            let responseDictionary = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+            
+            guard let jsonArray = responseDictionary as? [[String: Any]] else {
+                return .failure(.parsing)
             }
             
-            let startDate = Date(timeIntervalSince1970: timeInterval)
+            let events: [Event] = jsonArray.map { jsonEvent in
+                guard let title = jsonEvent["title"] as? String,
+                    let imageStringURL = jsonEvent["image"] as? String,
+                    let timestamp = jsonEvent["startDate"] as? Int,
+                    let id = jsonEvent["id"] as? String,
+                    let timeInterval = TimeInterval(exactly: timestamp),
+                    let imageURL = URL(string: imageStringURL) else {
+                        fatalError("Can't parse event")
+                }
+                
+                let startDate = Date(timeIntervalSince1970: timeInterval)
+                
+                return Event(id: id,
+                             imageURL: imageURL,
+                             title: title,
+                             date: startDate,
+                             isFavourite: self.isFavourite(id: id))
+            }
             
-            return Event(id: id,
-                         imageURL: imageURL,
-                         title: title,
-                         date: startDate,
-                         isFavourite: self.isFavourite(id: id))
+            return .success(events)
+            
+        } catch {
+            return .failure(.parsing)
         }
-        
-        return events
     }
     
     func cacheResponse(with jsonArray: [[String: Any]]) {

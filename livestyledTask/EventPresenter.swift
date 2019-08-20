@@ -16,6 +16,8 @@ protocol EventDisplayable: class {
 }
 
 protocol EventPresenting: class {
+    var view: EventDisplayable? { get set }
+
     func startPresenting()
     func buttonPressed(id: String)
     func formatDate(with date: Date) -> String
@@ -24,11 +26,12 @@ protocol EventPresenting: class {
 
 class EventPresenter: EventPresenting {
     
+    weak var view: EventDisplayable?
+    
     private let fetcher: EventFetching
     private let userDefault: FavouriteDataSource
     private let eventCachesDefault: EventsDataSource
     
-    weak var view: EventDisplayable?
     private var events: [Event] = [Event]()
 
     lazy var dateFormatter: DateFormatter = {
@@ -45,23 +48,31 @@ class EventPresenter: EventPresenting {
     }
 
     func startPresenting() {
-        fetcher.fetchEvents { (events, error) in
-            if error != nil, events == nil {
-                DispatchQueue.main.async {
-                    self.view?.presentAlert(title: "Connection issues", message: "Please check your connection status. No event are cached.")
-                }
-            } else if error != nil, let events = events {
-                DispatchQueue.main.async {
-                    self.view?.presentAlert(title: "Connection issues", message: "Please check your connection status. We've loaded events that were cached.")
-                    self.handleEvents(with: events)
-                }
-            } else if let events = events {
+        fetcher.fetchEvents { (result) in
+            switch result {
+            case .success(let events):
                 self.handleEvents(with: events)
-            } else {
-                DispatchQueue.main.async {
-                    self.view?.presentAlert(title: "Something went wrong", message: "Please contact support.")
-                }
+            case .failure(let errorState):
+                self.handleFailedPostsDelivery(with: errorState)
             }
+        }
+    }
+    
+    private func handleFailedPostsDelivery(with errorState: ErrorState) {
+        let title: String
+        let message: String
+        
+        switch errorState {
+        case .network:
+            title = "Connection issue"
+            message = "Seems that your aren't connected to Internet. To pull latest events you need a connection."
+        case .parsing:
+            title = "Something went wrong"
+            message = "Please try again. If the issue persists, contact support."
+        }
+        
+        DispatchQueue.main.async {
+            self.view?.presentAlert(title: title, message: message)
         }
     }
     
